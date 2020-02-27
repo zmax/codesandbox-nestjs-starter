@@ -20,7 +20,7 @@ export class AppService {
   </script>
 </head>
 
-<body></body>
+<body>Hello World!</body>
 </html>`;
   }
 }
