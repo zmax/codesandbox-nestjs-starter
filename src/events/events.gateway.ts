@@ -19,6 +19,8 @@ import { use, delegate } from 'typescript-mix';
 import { v4 as uuid } from 'uuid';
 
 
+/* ---- Mixins ---- */
+
 const getPlayerUID = () => this._id;
 const isIdentifiable = (obj: any) => '__identifiable' in obj;
 
@@ -27,14 +29,12 @@ class Identifiable {
   private _uid: string;
   get id(): string { return this._uid; }
   set id(value: string) { this._uid = value; }
-
-  @delegate(getPlayerUID) getUID:() => void
+  @delegate(getPlayerUID) getUID:() => void;
 }
 
 const isConnectable = (obj: any) => '__connectable' in obj;
 
 class Connectable {
-  // 
   __connectable: () => void;
   private _socket: Socket;
   private _request: IncomingMessage;
@@ -47,17 +47,21 @@ class Connectable {
 
 interface Player extends Identifiable, Connectable {}
 class Player {
+  // mixins
   @use(Identifiable, Connectable) this
-
   constructor() {
-    // 
+    // 用來判定是否為 mixin
     this.__identifiable = () => false;
     this.__connectable = () => false;
   }
 }
 
-// 可用 WebSocketGateway 修飾器(Decorator) 修改 port 和傳輸方式
-// @WebSocketGateway(81, { transports: ['websocket'] })
+/* 
+ * ---------------------------------------------------------
+ * 可用 WebSocketGateway 修飾器(Decorator) 修改 port 和傳輸方式
+ * @WebSocketGateway(81, { transports: ['websocket'] })
+ * ---------------------------------------------------------
+ */
 @WebSocketGateway(8080)
 export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 
@@ -66,11 +70,13 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
   clients: Map<string, Player>;
 
+  // OnGatewayInit
   afterInit(server: Server): any {
     this.clients = new Map();
     console.log('websocket server listen at ' + server.options.port);
   }
 
+  // OnGatewayConnection
   handleConnection(client: Socket, request: IncomingMessage): any {
     // // dump('connected... ', client);
     const newPlayer = new Player();
@@ -85,6 +91,7 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     // dump(client.options)
   }
 
+  // OnGatewayDisconnect
   handleDisconnect(client: Socket): any {
     // from(this.clients.entries())
     //   .pipe(map((item:any[]) => item[1])) // only values
@@ -114,7 +121,6 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     return from([1,2,3]).pipe(
       map(item => ({ event: 'events', data: item }))
     );
-    // return data;
   }
 
 }
