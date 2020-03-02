@@ -17,22 +17,22 @@ import { /* dd, */ dump } from 'dumper.js';
 import { IncomingMessage } from 'http';
 import { use, delegate } from 'typescript-mix';
 import { v4 as uuid } from 'uuid';
+import { UniqleIndex } from '../utils'
 
-
-/* ---- Mixins ---- */
-
+/* Helper functions */
 const getPlayerUID = () => this._id;
 const isIdentifiable = (obj: any) => '__identifiable' in obj;
+const isConnectable = (obj: any) => '__connectable' in obj;
 
+/* ---- Mixins ---- */
 class Identifiable {
   __identifiable: () => void;
-  private _uid: string;
-  get id(): string { return this._uid; }
-  set id(value: string) { this._uid = value; }
+  private _uid: number;
+  uuid: string;
+  get id(): number { return this._uid; }
+  set id(value: number) { this._uid = value; }
   @delegate(getPlayerUID) getUID:() => void;
 }
-
-const isConnectable = (obj: any) => '__connectable' in obj;
 
 class Connectable {
   __connectable: () => void;
@@ -44,7 +44,7 @@ class Connectable {
   set request(value: IncomingMessage) { this._request = value; }
 }
 
-
+/* ---- Classes ---- */
 interface Player extends Identifiable, Connectable {}
 class Player {
   // mixins
@@ -56,42 +56,75 @@ class Player {
   }
 }
 
-/* 
- * ---------------------------------------------------------
+/**
  * 可用 WebSocketGateway 修飾器(Decorator) 修改 port 和傳輸方式
  * @WebSocketGateway(81, { transports: ['websocket'] })
- * ---------------------------------------------------------
+ * 
+ * @export
+ * @class EventsGateway
+ * @implements {OnGatewayInit}
+ * @implements {OnGatewayConnection}
+ * @implements {OnGatewayDisconnect}
  */
 @WebSocketGateway(8080)
 export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 
+  /**
+   * Websocket Server
+   *
+   * @type {Server}
+   * @memberof EventsGateway
+   */
   @WebSocketServer()
   server: Server;
 
+  /**
+   * Connections
+   * 
+   * @type {Map<string, Player>}
+   * @memberof EventsGateway
+   */
   clients: Map<string, Player>;
-
-  // OnGatewayInit
+  
+  /**
+   * OnGatewayInit
+   *
+   * @param {Server} server
+   * @returns {*}
+   * @memberof EventsGateway
+   */
   afterInit(server: Server): any {
     this.clients = new Map();
     console.log('websocket server listen at ' + server.options.port);
   }
 
-  // OnGatewayConnection
+  /**
+   * OnGatewayConnection
+   *
+   * @param {Socket} client
+   * @param {IncomingMessage} request
+   * @returns {*}
+   * @memberof EventsGateway
+   */
   handleConnection(client: Socket, request: IncomingMessage): any {
-    // // dump('connected... ', client);
     const newPlayer = new Player();
-    newPlayer.id = uuid();
+    newPlayer.uuid = uuid();
+    newPlayer.id = UniqleIndex.index;
     newPlayer.socket = client;
     newPlayer.request = request;
     
-    this.clients.set(newPlayer.id, newPlayer);
-    // dump(newPlayer.getId());
+    this.clients.set(newPlayer.id.toString(), newPlayer);
     console.log(isIdentifiable(newPlayer), isConnectable(newPlayer));
     dump('new connection id: ' + newPlayer.id + ', palyers: '+ this.clients.size);
-    // dump(client.options)
   }
 
-  // OnGatewayDisconnect
+  /**
+   * OnGatewayDisconnect
+   *
+   * @param {Socket} client
+   * @returns {*}
+   * @memberof EventsGateway
+   */
   handleDisconnect(client: Socket): any {
     // from(this.clients.entries())
     //   .pipe(map((item:any[]) => item[1])) // only values
@@ -106,11 +139,20 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
         this.clients.delete(key);
         dump('delete ' + key + ', players: ' + this.clients.size);
       }
-    })
+    });
   }
 
-  // 官網不建議用這種方式
-  // onEvent(client: Socket, data: any): Observable<WsResponse<number>>
+  /**
+   * Handling events messages
+   * 
+   * 官網不建議用這種方式
+   * onEvent(client: Socket, data: any): Observable<WsResponse<number>>
+   *
+   * @param {Socket} client
+   * @param {*} data
+   * @returns {Observable<WsResponse<number>>}
+   * @memberof EventsGateway
+   */
   @SubscribeMessage('events')
   onEvent(
     @ConnectedSocket() client: Socket,
