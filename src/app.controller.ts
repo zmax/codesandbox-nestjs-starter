@@ -1,6 +1,6 @@
 import { Controller, Get, Render, Res } from '@nestjs/common';
 import { AppService } from './app.service';
-import { RenderableResponse } from 'nest-next';
+// import { RenderableResponse } from 'nest-next';
 
 @Controller()
 export class AppController {
