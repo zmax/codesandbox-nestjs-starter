@@ -1,3 +1,4 @@
+// for Next.js
 {
   "compilerOptions": {
     "target": "es6",

@@ -1,16 +1,17 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": ".next/production-server",
-    "declaration": true,
-    "target": "es6",
     "module": "commonjs",
-    "moduleResolution": "node",
-    "experimentalDecorators": true,
+    "declaration": true,
     "emitDecoratorMetadata": true,
-    "isolatedModules": false,
-    "noEmit": false,
-    "allowJs": false
+    "experimentalDecorators": true,
+    "target": "es2017",
+    "sourceMap": true,
+    "outDir": ".next/production-server",
+    "baseUrl": "./",
+    "incremental": true,
+    "moduleResolution": "node",
+    "noEmit": false
   },
   "include": ["./src/**/*"],
   "exclude": [
