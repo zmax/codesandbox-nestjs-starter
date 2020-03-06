@@ -2,6 +2,7 @@ import * as request from 'supertest';
 import { Test } from '@nestjs/testing';
 import { AppModule } from './../src/app.module';
 import { INestApplication } from '@nestjs/common';
+import { WsAdapter } from '@nestjs/platform-ws';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
@@ -12,13 +13,22 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useWebSocketAdapter(new WsAdapter(app));
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  afterAll(done => {
+    app.close();
+    done();
+  });
+
+  it('/ (GET)', done => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect('Hello World!');
+      .end((err, res) => {
+        expect(res.text).toContain('Hello World!');
+        done();
+      });
   });
 });
